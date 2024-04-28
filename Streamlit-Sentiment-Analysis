@@ -1,0 +1,45 @@
+import pickle
+import streamlit as st
+import re
+
+
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+stop_words=stopwords.words('english')
+from nltk.stem.porter import PorterStemmer
+ps=PorterStemmer()
+def preprocess(text):
+    text = text.lower()
+    text = re.sub('[^a-zA-Z0-9]',' ',text)
+    text = re.sub('<.*?>','',text)
+    text = re.sub('https?://\s+\www\.\s+',' ',text)
+    text_tokens = word_tokenize(text)
+    filtered_text = [word for word in text_tokens if not word in stop_words]
+    stem_text = [ps.stem(word) for word in (filtered_text)]
+
+    return " ".join(stem_text)
+
+
+
+tfidf = pickle.load(open('Vectorizer.pkl','rb'))
+svm_model = pickle.load(open('classifier.pkl','rb'))
+
+# Function to predict sentiment
+st.title('Sentiment Analysis')
+input_sms = st.text_input('Enter your text here')
+
+if st.button('Predict'):
+
+    transformed_sms = preprocess(input_sms)
+    vector_input = tfidf.transform([transformed_sms])
+    result = svm_model.predict(vector_input)[0]
+
+    if result == 0:
+        st.header('Negative')
+    elif result == 1:
+        st.header('Neutral')
+    else:
+        st.header('Positive')
+
+
